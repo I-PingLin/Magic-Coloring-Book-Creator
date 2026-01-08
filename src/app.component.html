@@ -1,0 +1,189 @@
+
+<div class="min-h-screen pb-20">
+  <!-- Header -->
+  <header class="bg-white shadow-sm py-6 px-4 mb-8">
+    <div class="max-w-4xl mx-auto flex items-center justify-between">
+      <div class="flex items-center space-x-3">
+        <div class="bg-yellow-400 p-2 rounded-xl">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-8 w-8 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M15.232 5.232l3.536 3.536m-2.036-5.036a2.5 2.5 0 113.536 3.536L6.5 21.036H3v-3.572L16.732 3.732z" />
+          </svg>
+        </div>
+        <h1 class="text-3xl font-bold text-blue-900">Coloring Magic</h1>
+      </div>
+    </div>
+  </header>
+
+  <main class="max-w-4xl mx-auto px-4 grid grid-cols-1 md:grid-cols-3 gap-8">
+    <!-- Configuration Panel -->
+    <div class="md:col-span-1 space-y-6">
+      <div class="bg-white p-6 rounded-3xl shadow-xl border-4 border-blue-100">
+        <h2 class="text-xl font-bold text-blue-800 mb-4">Create Your Book</h2>
+        
+        <div class="space-y-4">
+          <div>
+            <label class="block text-sm font-semibold text-gray-600 mb-1">Child's Name</label>
+            <input 
+              [(ngModel)]="childName"
+              placeholder="e.g. Leo"
+              class="w-full px-4 py-3 rounded-2xl border-2 border-gray-100 focus:border-blue-400 focus:outline-none transition-colors"
+            >
+          </div>
+
+          <div>
+            <label class="block text-sm font-semibold text-gray-600 mb-1">Theme</label>
+            <input 
+              [(ngModel)]="theme"
+              placeholder="e.g. Space Dinosaurs"
+              class="w-full px-4 py-3 rounded-2xl border-2 border-gray-100 focus:border-blue-400 focus:outline-none transition-colors"
+            >
+          </div>
+
+          <div>
+            <label class="block text-sm font-semibold text-gray-600 mb-1">Image Quality</label>
+            <select 
+              [(ngModel)]="resolution"
+              class="w-full px-4 py-3 rounded-2xl border-2 border-gray-100 focus:border-blue-400 focus:outline-none transition-colors"
+            >
+              <option value="1K">1K (Standard)</option>
+              <option value="2K">2K (High Res)</option>
+              <option value="4K">4K (Super Sharp)</option>
+            </select>
+          </div>
+
+          <button 
+            (click)="startGeneration()"
+            [disabled]="!canGenerate()"
+            class="w-full py-4 bg-blue-600 hover:bg-blue-700 disabled:bg-gray-300 text-white font-bold rounded-2xl shadow-lg transition-all transform active:scale-95"
+          >
+            @if (isGenerating()) {
+              <span class="flex items-center justify-center">
+                <svg class="animate-spin h-5 w-5 mr-3 text-white" viewBox="0 0 24 24">
+                  <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                  <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Making Magic...
+              </span>
+            } @else {
+              Generate Book
+            }
+          </button>
+        </div>
+      </div>
+
+      <!-- Chatbot -->
+      <div class="bg-white p-6 rounded-3xl shadow-xl border-4 border-purple-100 flex flex-col h-[400px]">
+        <h2 class="text-xl font-bold text-purple-800 mb-4 flex items-center">
+          <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6 mr-2" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M8 10h.01M12 10h.01M16 10h.01M9 16H5a2 2 0 01-2-2V6a2 2 0 012-2h14a2 2 0 012 2v8a2 2 0 01-2 2h-5l-5 5v-5z" />
+          </svg>
+          Ask the Artist
+        </h2>
+        
+        <div class="flex-1 overflow-y-auto mb-4 space-y-3 pr-2 custom-scrollbar">
+          @if (chatHistory().length === 0) {
+            <p class="text-gray-400 text-center italic mt-10">Hi! I'm Sparky. Ask me anything about art or your book!</p>
+          }
+          @for (msg of chatHistory(); track $index) {
+            <div [class]="msg.role === 'user' ? 'text-right' : 'text-left'">
+              <div [class]="msg.role === 'user' ? 'bg-blue-100 text-blue-800' : 'bg-purple-100 text-purple-800'" class="inline-block px-4 py-2 rounded-2xl max-w-[90%] text-sm">
+                {{ msg.text }}
+              </div>
+            </div>
+          }
+          @if (isChatLoading()) {
+            <div class="text-left">
+              <div class="bg-purple-100 px-4 py-2 rounded-2xl inline-block">
+                <div class="flex space-x-1">
+                  <div class="w-1.5 h-1.5 bg-purple-400 rounded-full animate-bounce"></div>
+                  <div class="w-1.5 h-1.5 bg-purple-400 rounded-full animate-bounce" style="animation-delay: 0.2s"></div>
+                  <div class="w-1.5 h-1.5 bg-purple-400 rounded-full animate-bounce" style="animation-delay: 0.4s"></div>
+                </div>
+              </div>
+            </div>
+          }
+        </div>
+
+        <div class="flex space-x-2">
+          <input 
+            [(ngModel)]="chatInput"
+            (keyup.enter)="sendChatMessage()"
+            placeholder="Type a message..."
+            class="flex-1 px-4 py-2 rounded-xl border-2 border-gray-100 focus:border-purple-400 focus:outline-none text-sm"
+          >
+          <button (click)="sendChatMessage()" class="p-2 bg-purple-600 text-white rounded-xl hover:bg-purple-700 transition-colors">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-5 w-5" viewBox="0 0 20 20" fill="currentColor">
+              <path d="M10.894 2.553a1 1 0 00-1.788 0l-7 14a1 1 0 001.169 1.409l5-1.429A1 1 0 009 15.571V11a1 1 0 112 0v4.571a1 1 0 00.725.962l5 1.428a1 1 0 001.17-1.408l-7-14z" />
+            </svg>
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Preview Panel -->
+    <div class="md:col-span-2 space-y-6">
+      @if (progressMessage()) {
+        <div class="bg-blue-600 text-white px-6 py-3 rounded-2xl flex items-center shadow-lg animate-pulse">
+          <span class="mr-3">✨</span>
+          {{ progressMessage() }}
+        </div>
+      }
+
+      <div class="grid grid-cols-1 sm:grid-cols-2 gap-4">
+        @for (page of pages(); track $index) {
+          <div class="bg-white p-2 rounded-3xl shadow-lg border-2 border-gray-50 overflow-hidden group">
+            <div class="aspect-[3/4] bg-gray-50 rounded-2xl relative flex items-center justify-center overflow-hidden border border-gray-100">
+              @if (page.status === 'generating') {
+                <div class="flex flex-col items-center">
+                  <div class="w-12 h-12 border-4 border-blue-200 border-t-blue-600 rounded-full animate-spin"></div>
+                  <p class="mt-4 text-sm font-semibold text-blue-400">Sketching...</p>
+                </div>
+              } @else if (page.status === 'done' && page.imageUrl) {
+                <img [src]="page.imageUrl" class="w-full h-full object-contain cursor-zoom-in" alt="Coloring page">
+                <div class="absolute bottom-0 left-0 right-0 p-3 bg-white/90 backdrop-blur-sm transform translate-y-full group-hover:translate-y-0 transition-transform">
+                  <p class="text-xs font-bold text-gray-700 text-center">{{ page.title }}</p>
+                </div>
+              } @else if (page.status === 'error') {
+                <div class="text-center px-6">
+                  <span class="text-3xl">😢</span>
+                  <p class="mt-2 text-xs text-red-400">Failed to draw this one</p>
+                </div>
+              } @else {
+                <div class="text-center text-gray-300">
+                  <svg xmlns="http://www.w3.org/2000/svg" class="h-12 w-12 mx-auto mb-2 opacity-20" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M4 16l4.586-4.586a2 2 0 012.828 0L16 16m-2-2l1.586-1.586a2 2 0 012.828 0L20 14m-6-6h.01M6 20h12a2 2 0 002-2V6a2 2 0 00-2-2H6a2 2 0 00-2 2v12a2 2 0 002 2z" />
+                  </svg>
+                  <p class="text-sm font-medium">Page {{ $index + 1 }}</p>
+                </div>
+              }
+            </div>
+          </div>
+        }
+      </div>
+
+      @if (pages().length > 0 && pages()[4]?.status === 'done') {
+        <div class="flex justify-center pt-6">
+          <button 
+            (click)="downloadPdf()"
+            class="px-12 py-5 bg-green-500 hover:bg-green-600 text-white rounded-3xl shadow-xl font-bold text-lg flex items-center space-x-3 transition-all hover:scale-105"
+          >
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-6 w-6" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 10v6m0 0l-3-3m3 3l3-3m2 8H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            </svg>
+            <span>Download PDF Book</span>
+          </button>
+        </div>
+      } @else if (pages().length === 0 && !isGenerating()) {
+        <div class="flex flex-col items-center justify-center h-[500px] text-center px-10">
+          <div class="bg-blue-100 p-8 rounded-full mb-6">
+            <svg xmlns="http://www.w3.org/2000/svg" class="h-16 w-16 text-blue-500 opacity-50" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 6.253v13m0-13C10.832 5.477 9.246 5 7.5 5S4.168 5.477 3 6.253v13C4.168 18.477 5.754 18 7.5 18s3.332.477 4.5 1.253m0-13C13.168 5.477 14.754 5 16.5 5c1.747 0 3.332.477 4.5 1.253v13C19.832 18.477 18.247 18 16.5 18c-1.746 0-3.332.477-4.5 1.253" />
+            </svg>
+          </div>
+          <h3 class="text-2xl font-bold text-blue-900 mb-2">Ready to Start?</h3>
+          <p class="text-gray-500 max-w-sm">Enter a name and theme on the left to create a personalized coloring adventure!</p>
+        </div>
+      }
+    </div>
+  </main>
+</div>
